@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Website Is Maintenance</title>
+	<title> Is Maintenance</title>
 	<style type="text/css">
 		.sortingDesc{
 			background: url('desc.png');
