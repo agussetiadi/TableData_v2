@@ -11,35 +11,53 @@
 			field : 'unset',
 			data : 'unset',
 			dataFilter : 'unset',
-			defaultSort : 'unset'
+			defaultSort : 'unset',
+			dataSelect : {
+				init : 'unset',
+				select : 'unset'
+			}
 		},objParam);
 
+		/*
+		* secara default saat plugin pertama diload dia akan memeriksa
+		  apakah ada paramater defaultSort atau tidak
+		  
+		* parameter defaultSort ini di set oleh user
+
+		* parameter defaultSort : fungsinya untuk menentukan sorting default 
+		  saat plugin pertama kali di load,
+		* valuenya harus berupa array(),
+		  array pertama sebagai nama fieldnya dan array kedua sebagaia jenis sortingnya
+		  apakah sorting "asc" / "desc", Ex -> defaultSort : ['nama_field','desc']
+		*/
 
 		var url = setting.url;
 		var init = $(this);
-		var select = $(this)[0].attributes[0].value
+		var select = $(this)[0].id;
 		var footer = select+'-footer';
 		var pageName = select+'-page';
 		var countTotal = select+'-countTotal';
 		var wrapper = 'wrapper-'+select;
 		var btnNext = select+'-btnNext';
 		var btnPre = select+'-btnPre';
+		var selectorEl = "#"+select;
 
-		var selectorEl = $(this).selector;
 
 		$(this).find('thead').addClass(select + '-thead');
 		var headerSelector = select + '-thead';
 		var headerTh = selectorEl + " th";
+		$(headerTh).css('cursor','pointer');
+
 
 		this.reload = function(objSend){
-			$("#"+pageName).val(1);
+			$("#"+pageName).val(1)
 			page = 1;
 
 			if (setting.length !== 'unset') {
 				length = $(setting.length).val();
 			}
 			else{
-				length = 3;
+				length = 10;
 			}
 			if (setting.search !== 'unset') {
 				search = $(setting.search).val()
@@ -49,7 +67,17 @@
 			}
 			start = page * length - length;
 
-			var sortInit = getSortThead(headerTh,defaultField);/*Proses mengambil sorting dr thead*/
+			if (setting.defaultSort !== 'unset') {
+				var sortInit = {
+					field : setting.defaultSort[0], /* -> order by*/
+					sort : setting.defaultSort[1], /* -> desc or asc */
+				}
+			}
+			else{
+				var sortInit = getSortThead(headerTh,defaultField);
+			}
+
+
 			var paramObj = {
 				length : length,
 				start : start,
@@ -57,7 +85,8 @@
 				field : sortInit.field,
 				sort : sortInit.sort
 			}
-			
+
+
 			if (typeof objSend !== 'undefined') {
 				var dataSend = objSend;
 					Object.keys(dataSend).forEach(function(key){
@@ -79,13 +108,17 @@
 				}
 			}
 
-
+			var perPage = length;
+			var currentPage = page;
 			ajax({
 				url : url ,
 				selector : init,
 				footer : footer,
 				data : paramObj,
-				countTotal : countTotal
+				countTotal : countTotal,
+				pageName : pageName,
+				perPage : perPage,
+				currentPage : currentPage
 			});
 		}
 
@@ -96,8 +129,8 @@
 			*/
 			
 
-
 			
+
 
 			if (setting.field !== 'unset') {
 				defaultField = setting.field;
@@ -107,9 +140,9 @@
 			}
 
 			var footerHtml = '<div style="margin-top:10px; width:100% ">';
-			footerHtml += '<div class="'+footer+'" style="display : inline; margin-right : 20px;"><button id="'+btnPre+'" class="btn btn-primary btn-sm">';
-			footerHtml += 'Previous </button> <input type="text" style="width : 40px; border-style:solid" id="'+pageName+'"  value="1">';
-			footerHtml += '<button id="'+btnNext+'" class="btn btn-primary btn-sm"> Next </button></div>';
+			footerHtml += '<div class="'+footer+'" style="display : inline; margin-right : 20px;"><button style="" id="'+btnPre+'" class="btn btn-primary">';
+			footerHtml += 'Previous </button> <select class="custom-select" style="margin:0;" id="'+pageName+'"><option value="1">1</option></select>';
+			footerHtml += '<button style="margin-left:5px" id="'+btnNext+'" class="btn btn-primary"> Next </button></div>';
 			footerHtml += '<div class="'+countTotal+'" style="display : inline;"><i>Total Data</i></div></div>';
 
 			var wrapperHtml	= '<div class="'+wrapper+'" style="position:relative"></div>';
@@ -119,7 +152,8 @@
 				$(this).after(wrapperHtml);
 				$("."+wrapper).html($(this));
 				$("."+wrapper).append(footerHtml);
-
+				
+				$("#"+pageName).val(1)
 				var page = 1;
 			}
 
@@ -183,13 +217,18 @@
 				})
 			}
 
+			var perPage = length;
+			var currentPage = page;
 
 			ajax({
 				url : url ,
 				selector : init,
 				footer : footer,
 				data : paramObj,
-				countTotal : countTotal
+				countTotal : countTotal,
+				pageName : pageName,
+				perPage : perPage,
+				currentPage : currentPage
 			});
 
 			$(document).on('change', "#" + pageName, function(){
@@ -199,7 +238,7 @@
 				page = parseInt(page);
 
 				if (page > 0) {
-					$(this).val(page)
+					
 					if (setting.length !== 'unset') {
 						length = $(setting.length).val();
 					}
@@ -234,77 +273,91 @@
 							paramObj[key2]  = $(dataSend2[key2]).val()
 						})
 					}
+					var perPage = length;
+					var currentPage = page;
+
 					ajax({
 						url : url ,
 						selector : init,
 						footer : footer,
 						data : paramObj,
-						countTotal : countTotal
+						countTotal : countTotal,
+						pageName : pageName,
+						perPage : perPage,
+						currentPage : currentPage
 					});
 				}
-				else{
-					$(this).val(1);
-				}
+				
 			})
 
 				$(document).on("click", "#"+btnNext, function(){
 					var valPageOld = $("#"+pageName).val();
 					var valPageNew = parseInt(valPageOld) + 1;
-						$("#"+pageName).val(valPageNew);
+					var countValPageOrigin = $("#"+pageName+' option').length
+						
+					if (valPageNew <= countValPageOrigin){
+						page = valPageNew;
 
-					page = valPageNew;
+						if (setting.length !== 'unset') {
+							length = $(setting.length).val();
+						}
+						else{
+							length = 3;
+						}
+						if (setting.search !== 'unset') {
+							search = $(setting.search).val()
+						}
+						else{
+							search = '';
+						}
+						start = page * length - length;
 
-					if (setting.length !== 'unset') {
-						length = $(setting.length).val();
-					}
-					else{
-						length = 3;
-					}
-					if (setting.search !== 'unset') {
-						search = $(setting.search).val()
-					}
-					else{
-						search = '';
-					}
-					start = page * length - length;
+						var sortInit = getSortThead(headerTh,defaultField);
+						var paramObj = {
+							length : length,
+							start : start,
+							search : search,
+							field : sortInit.field,
+							sort : sortInit.sort
+						}
+						if (setting.data !== 'unset') {
+							var dataSend = setting.data;
+							Object.keys(dataSend).forEach(function(key){
+								paramObj[key]  = dataSend[key]
+							})
+						}
+						if (setting.dataFilter !== 'unset') {
+							var dataSend2 = setting.dataFilter;
+							Object.keys(dataSend2).forEach(function(key2){
+								paramObj[key2]  = $(dataSend2[key2]).val()
+							})
+						}
+						var perPage = length;
+						var currentPage = page;
 
-					var sortInit = getSortThead(headerTh,defaultField);
-					var paramObj = {
-						length : length,
-						start : start,
-						search : search,
-						field : sortInit.field,
-						sort : sortInit.sort
+						ajax({
+							url : url ,
+							selector : init,
+							footer : footer,
+							data : paramObj,
+							countTotal : countTotal,
+							pageName : pageName,
+							perPage : perPage,
+							currentPage : currentPage
+						});
+						
 					}
-					if (setting.data !== 'unset') {
-						var dataSend = setting.data;
-						Object.keys(dataSend).forEach(function(key){
-							paramObj[key]  = dataSend[key]
-						})
-					}
-					if (setting.dataFilter !== 'unset') {
-						var dataSend2 = setting.dataFilter;
-						Object.keys(dataSend2).forEach(function(key2){
-							paramObj[key2]  = $(dataSend2[key2]).val()
-						})
-					}
-					ajax({
-						url : url ,
-						selector : init,
-						footer : footer,
-						data : paramObj,
-						countTotal : countTotal
-					});
+
 				})
 
 				$(document).on("click", "#"+btnPre, function(){
 					var valPageOld = $("#"+pageName).val();
 
 					var valPageNew = parseInt(valPageOld) - 1;
-						$("#"+pageName).val(valPageNew);
+						
 
 					if (valPageOld <= 1) {
-						$("#"+pageName).val(1);
+						/**/
 					}
 					else{
 
@@ -344,12 +397,18 @@
 								paramObj[key2]  = $(dataSend2[key2]).val()
 							})
 						}
+						var perPage = length;
+						var currentPage = page;
+
 						ajax({
 							url : url ,
 							selector : init,
 							footer : footer,
 							data : paramObj,
-							countTotal : countTotal
+							countTotal : countTotal,
+							pageName : pageName,
+							perPage : perPage,
+							currentPage : currentPage
 						});
 						
 					}
@@ -359,7 +418,8 @@
 			if (setting.length !== 'unset') {
 
 				$(document).on('change', setting.length, function(){
-					page = $("#"+pageName).val();
+					$("#"+pageName).val(1)
+					page = 1;
 
 					if (setting.length !== 'unset') {
 						length = $(setting.length).val();
@@ -408,12 +468,18 @@
 					}
 
 
+					var perPage = length;
+					var currentPage = page;
+
 					ajax({
 						url : url ,
 						selector : init,
 						footer : footer,
 						data : paramObj,
-						countTotal : countTotal
+						countTotal : countTotal,
+						pageName : pageName,
+						perPage : perPage,
+						currentPage : currentPage
 					});
 				})
 
@@ -423,7 +489,7 @@
 
 				$(document).on('input', setting.search, function(){
 
-					$("#"+pageName).val(1);
+					$("#"+pageName).val(1)
 					page = 1;
 
 					if (setting.length !== 'unset') {
@@ -474,13 +540,17 @@
 						}
 					}
 
-
+					var perPage = length;
+					var currentPage = page;
 					ajax({
 						url : url ,
 						selector : init,
 						footer : footer,
 						data : paramObj,
-						countTotal : countTotal
+						countTotal : countTotal,
+						pageName : pageName,
+						perPage : perPage,
+						currentPage : currentPage
 					});
 					
 				})
@@ -493,24 +563,27 @@
 				var inx = $(headerTh).index(this);
 				$(headerTh).removeClass('sortingDesc');
 				$(headerTh).removeClass('sortingAsc');
-
+				$(headerTh).find('.th-fa').remove();
 				if ($(headerTh).eq(inx).attr("sort") == "desc") {
 					$(headerTh).eq(inx).attr("sort","asc");
 					$(headerTh).eq(inx).addClass("sortingAsc");
+					$(headerTh).eq(inx).append('<span style="margin-left:10px;" class="th-fa fa fa-sort-amount-asc"></span>');
 				}
 				else if($(headerTh).eq(inx).attr("sort") == "asc"){
 					$(headerTh).eq(inx).attr("sort","desc");
 					$(headerTh).eq(inx).addClass("sortingDesc");
+					$(headerTh).eq(inx).append('<span style="margin-left:10px;" class="th-fa fa fa-sort-amount-desc"></span>');
 					
 				}
 				else{
 					$(headerTh).removeAttr("sort");
 					$(headerTh).eq(inx).attr("sort","desc");
 					$(headerTh).eq(inx).addClass("sortingDesc");
+					$(headerTh).eq(inx).append('<span style="margin-left:10px;" class="th-fa fa fa-sort-amount-desc"></span>');
 				}
 
 
-				$("#"+pageName).val(1);
+				$("#"+pageName).val(1)
 				page = 1;
 
 					if (setting.length !== 'unset') {
@@ -550,12 +623,17 @@
 								paramObj[key2]  = $(dataSend2[key2]).val()
 							})
 					}
+					var perPage = length;
+					var currentPage = page;
 					ajax({
 						url : url ,
 						selector : init,
 						footer : footer,
 						data : paramObj,
-						countTotal : countTotal
+						countTotal : countTotal,
+						pageName : pageName,
+						perPage : perPage,
+						currentPage : currentPage
 					});
 			})
 
@@ -589,6 +667,18 @@
 			}
 		})
 	}
+
+
+	/*
+	* function getShortThead
+	* untuk memberi nilai ke parameter ajax apakah sorting
+	  yang di berikan berupa Descending atau Ascending
+
+	* nilai yang di dapat di ambil dari pengambilan attribut pada html thead
+	  value nya dapat berupa ascending/descending -> sort="desc" / sort="asc"
+
+
+	*/
 
 	function getSortThead(selectThead,defaultField){
 
@@ -632,13 +722,56 @@
 
 	}
 
+	/*
+	* Function For render html page in footer
+	* totalRow : totalData yang di ambil dari server
+	* perPage : totalValue perpage pada properti
+	* currentPage : value halaman yang akan di selected
+	  value berdasarkan nomor halaman yang akan di selected
+	*/
+
+	function pagingSelect(pageName,totalRow, perPage, currentPage){
+		if (typeof currentPage == 'undefined') {
+			currentPage = 1;
+		}
+
+
+		var selectedPaging = "#"+pageName;
+		var totalPaging = Math.ceil(parseInt(totalRow) / parseInt(perPage));
+		var valPageOrigin = parseInt($(selectedPaging).val());
+		if (currentPage > totalPaging) {
+			currentPage = valPageOrigin;
+		}
+		if (currentPage < 1) {
+			currentPage = 1;
+		}
+
+		var opttHtm = '<option value="1">1</option>';
+		for (var i = 2; i <= totalPaging; i++) {
+			opttHtm += '<option value="'+i+'">'+i+'</option>';
+		}
+		$(selectedPaging).html(opttHtm);
+		$(selectedPaging).find('option[value='+currentPage+']')
+		$(selectedPaging).val(currentPage);
+	}
+
+
+	/*
+	* Functon Ajax
+	* untuk mengeksekusi perintah yang diberikan sesuai dengan parameter
+	  parameter yang diberikan dieksekusi di setiap even saat mengambil data
+	* 
+	*/
 	function ajax(parameterObject, callback){
 
-		var url = parameterObject.url;
-		var selector = parameterObject.selector;
-		var setting = parameterObject.data;
-		var footer = parameterObject.footer;
-		var countTotal = parameterObject.countTotal;
+		var url 		= parameterObject.url;
+		var selector 	= parameterObject.selector;
+		var setting 	= parameterObject.data;
+		var footer 		= parameterObject.footer;
+		var countTotal 	= parameterObject.countTotal;
+		var pageName 	= parameterObject.pageName;
+		var perPage 	= parameterObject.perPage;
+		var currentPage = parameterObject.currentPage;
 
 		lookData(url,setting, function(dataObj){
 
@@ -663,8 +796,8 @@
 	        }
 
 	        selector.find('tbody').html(tr);
+	        pagingSelect(pageName,totalData, perPage, currentPage)
 
-	        
 
 	        if (totalData <= setting.length) {
 	        	$("."+footer).hide();
@@ -674,6 +807,8 @@
 	        }
 
 	        $("."+countTotal).find('i').html('Total Data '+totalData);
+
+	        
 
 			if (callback)
 				callback(totalData)

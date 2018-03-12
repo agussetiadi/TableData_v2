@@ -30,7 +30,6 @@
 	<option value="Pending">Pending</option>
 	<option value="Done">Done</option>
 </select>
-<p>Coba</p>
 <select class="form-control custom-select" id="paid_off" style="margin: 0">
 	<option value="all">Pembayaran</option>
 	<option value="L">Lunas</option>
@@ -51,7 +50,6 @@
 </table>
 
 <body>
-<p>Kampleh</p>
 <script type="text/javascript">
 
 	$(document).ready(function(){
