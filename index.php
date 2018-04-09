@@ -86,7 +86,7 @@
 						array[1] = jenis sort, asc / desc
 		*/
 		var kamplehTable = $('#lookUp').tableData({
-			url : 'http://localhost:8080/gonam/admin/pos/render_order',
+			url : 'http://localhost/gonam/admin/pos/render_order',
 			search : '#search',
 			length : '#length',
 			field : ['order_id', 'customer_name','date_deliver'],
